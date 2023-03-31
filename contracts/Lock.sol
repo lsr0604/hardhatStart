@@ -3,32 +3,89 @@ pragma solidity ^0.8.9;
 
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
+abstract contract Initializable {
+    /**
+     * @dev Indicates that the contract has been initialized.
+     */
+    bool private _initialized;
 
-contract Lock {
-    uint public unlockTime;
-    address payable public owner;
+    /**
+     * @dev Indicates that the contract is in the process of being initialized.
+     */
+    bool private _initializing;
 
-    event Withdrawal(uint amount, uint when);
-
-    constructor(uint _unlockTime) payable {
+    /**
+     * @dev Modifier to protect an initializer function from being invoked twice.
+     */
+    modifier initializer() {
         require(
-            block.timestamp < _unlockTime,
-            "Unlock time should be in the future"
+            _initializing || _isConstructor() || !_initialized,
+            "Initializable: contract is already initialized"
         );
 
-        unlockTime = _unlockTime;
-        owner = payable(msg.sender);
+        bool isTopLevelCall = !_initializing;
+        if (isTopLevelCall) {
+            _initializing = true;
+            _initialized = true;
+        }
+
+        _;
+
+        if (isTopLevelCall) {
+            _initializing = false;
+        }
     }
 
-    function withdraw() public {
-        // Uncomment this line, and the import of "hardhat/console.sol", to print a log in your terminal
-        // console.log("Unlock time is %o and block timestamp is %o", unlockTime, block.timestamp);
+    /// @dev Returns true if and only if the function is running in the constructor
+    function _isConstructor() private view returns (bool) {
+        // extcodesize checks the size of the code stored in an address, and
+        // address returns the current address. Since the code is still not
+        // deployed when running a constructor, any checks on its code size will
+        // yield zero, making it an effective way to detect if a contract is
+        // under construction or not.
+        address self = address(this);
+        uint256 cs;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            cs := extcodesize(self)
+        }
+        return cs == 0;
+    }
+}
+contract Lock is Initializable {
+   
+    uint public balance;
 
-        require(block.timestamp >= unlockTime, "You can't withdraw yet");
-        require(msg.sender == owner, "You aren't the owner");
+    function init() external initializer {
+        balance = 99;
+    }
 
-        emit Withdrawal(address(this).balance, block.timestamp);
+     function deposit(uint value) external payable {
+     
+        balance = value;
+        
+    }
 
-        owner.transfer(address(this).balance);
+    function withdraw() external payable{
+        balance = 0;
+    }
+}
+
+contract Lock2 is Initializable {
+   
+    uint public balance;
+
+    
+
+    function init() external initializer {
+        balance = 99;
+    }
+
+     function deposit(uint value) external payable {
+        balance = value * 2;
+    }
+
+    function withdraw() external payable{
+        balance = 999999;
     }
 }
